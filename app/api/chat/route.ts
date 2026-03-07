@@ -4,6 +4,29 @@ import { agents } from "@/lib/agents";
 
 const groq = new Groq({ apiKey: process.env.GROQ_API_KEY });
 
+function getTurkishDateTime(): string {
+    const now = new Date();
+
+    const dateStr = now.toLocaleDateString("tr-TR", {
+        timeZone: "Europe/Istanbul",
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
+
+    const timeStr = now.toLocaleTimeString("tr-TR", {
+        timeZone: "Europe/Istanbul",
+        hour: "2-digit",
+        minute: "2-digit",
+    });
+
+    return `[SİSTEM BİLGİSİ — Güncel Tarih ve Saat]
+Bugünün tarihi: ${dateStr}
+Şu anki saat: ${timeStr} (Türkiye saati, UTC+3)
+---\n`;
+}
+
 export async function POST(req: NextRequest) {
     try {
         const { messages, agentId } = await req.json();
@@ -13,10 +36,12 @@ export async function POST(req: NextRequest) {
             return NextResponse.json({ error: "Agent bulunamadı" }, { status: 400 });
         }
 
+        const systemPromptWithDate = getTurkishDateTime() + agent.systemPrompt;
+
         const completion = await groq.chat.completions.create({
             model: "llama-3.3-70b-versatile",
             messages: [
-                { role: "system", content: agent.systemPrompt },
+                { role: "system", content: systemPromptWithDate },
                 ...messages,
             ],
             temperature: 0.7,
