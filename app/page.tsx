@@ -13,15 +13,35 @@ type ChatHistory = {
   [agentId: string]: Message[];
 };
 
+const STORAGE_KEY = "teknofest_chat_history";
+
 export default function Home() {
   const [selectedAgent, setSelectedAgent] = useState<Agent>(agents[0]);
-  const [chatHistory, setChatHistory] = useState<ChatHistory>({});
+  const [chatHistory, setChatHistory] = useState<ChatHistory>(() => {
+    // Sayfa açılışında localStorage'dan yükle
+    if (typeof window === "undefined") return {};
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      return saved ? JSON.parse(saved) : {};
+    } catch {
+      return {};
+    }
+  });
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const messages = chatHistory[selectedAgent.id] || [];
+
+  // Sohbet değişince localStorage'a kaydet
+  useEffect(() => {
+    try {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(chatHistory));
+    } catch {
+      // localStorage dolu olabilir — sessizce geç
+    }
+  }, [chatHistory]);
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -74,7 +94,13 @@ export default function Home() {
   };
 
   const handleClear = () => {
-    setChatHistory((prev) => ({ ...prev, [selectedAgent.id]: [] }));
+    setChatHistory((prev) => {
+      const updated = { ...prev, [selectedAgent.id]: [] };
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(updated));
+      } catch { /* ignore */ }
+      return updated;
+    });
   };
 
   const autoResize = () => {
