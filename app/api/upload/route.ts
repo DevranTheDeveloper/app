@@ -1,12 +1,16 @@
 import { NextRequest, NextResponse } from "next/server";
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const pdfParse = require("pdf-parse");
-
 import mammoth from "mammoth";
+
+// pdf-parse ve mammoth native Node.js modülleri gerektirir
+export const runtime = "nodejs";
+export const dynamic = "force-dynamic";
 
 const MAX_BYTES = 10 * 1024 * 1024; // 10 MB
 
 export async function POST(req: NextRequest) {
+
     try {
         const formData = await req.formData();
         const file = formData.get("file") as File | null;
